@@ -23,7 +23,7 @@
 (function ($) {
 
     var defaults = {
-        radius: 50,
+        radius: 100,
         skin: 'default',
     };
 
@@ -31,6 +31,7 @@
         this.element = $(element);
         this.options = $.extend(defaults, options);
         this.radius = 100;
+        this.scale = 1;
         this.diameter = this.radius * 2;
         this.loaded = 0.0;
         this.played = 0.0;
@@ -49,7 +50,7 @@
                     outerCircle: {color: "gradient:linear:#f5f5f5:#e8e8e8"},
                     progressBar: {loadColor: "rgba(255, 255, 255, 0.7)", fillColor: "gradient:linear:rgba(255, 110, 2, 1.000):rgba(255, 255, 0, 1.000):rgba(255, 109, 0, 1.000)", margin: 20, shadow:{type: 'inner'}},
                     innerCircle: {color: "gradient:linear:#ececec:#d4d4d4", margin: 35, shadow:{type: 'outer'}},
-                    buttons: {playColor: '#666666', playHoverColor: '#00ff00', pauseColor: '#b8b8b8', pauseHoverColor: '#ff0000'}
+                    buttons: {playColor: '#666666', playHoverColor: '#00ff00', pauseColor: '#666666', pauseHoverColor: '#ff0000'}
                 }
             }
         },
@@ -68,8 +69,8 @@
             this.canvas = $('<canvas></canvas>').attr('width', this.diameter+"px")
                                         .attr('height', this.diameter+"px")
                                         .css({
-                                                width: this.diameter, 
-                                                height: this.diameter,
+                                                width: this.diameter+"px", 
+                                                height: this.diameter+"px",
                                                 cursor: 'pointer'
                                             });
             this.ctx = this.canvas[0].getContext("2d");
@@ -77,12 +78,14 @@
             
             if(this.options.radius != this.radius){
                 var scale = this.options.radius / this.radius;
-                var w = this.canvas.width();
-                var h = this.canvas.height();
-                this.canvas.width(w * scale).height( h * scale);
+                this.scale = scale;
+                this.canvas.attr('width', (this.diameter * scale)+"px")
+                            .attr('height', (this.diameter * scale)+"px")
+                            .width(this.diameter * scale).height( this.diameter * scale);
+                this.ctx.scale(scale, scale);
             }
             
-            this.element.after(this.canvas);
+            this.element.after(this.canvas).hide();
         },
         
         _bindEvents: function(){
@@ -204,7 +207,7 @@
                 
                 if(props.shadow && props.shadow.type == 'outer'){                
                     this.ctx.lineWidth = 0;
-                    this.ctx.shadowBlur = props.shadow.blur ? props.shadow.blur : 5;
+                    this.ctx.shadowBlur = (props.shadow.blur ? props.shadow.blur : 5) * this.scale;
                     this.ctx.shadowColor = props.shadow.color ? props.shadow.color : 'rgba(0, 0, 0, 0.6)';
                     this.ctx.shadowOffsetX = 0;
                     this.ctx.shadowOffsetY = 0;
@@ -221,8 +224,8 @@
                 
                 this.ctx.beginPath();
                 this.ctx.strokeStyle = '#000000';
-                this.ctx.lineWidth = props.shadow.width ? props.shadow.width : 5;
-                this.ctx.shadowBlur = props.shadow.blur ? props.shadow.blur : 5;
+                this.ctx.lineWidth = (props.shadow.width ? props.shadow.width : 5);
+                this.ctx.shadowBlur = (props.shadow.blur ? props.shadow.blur : 5) * this.scale;
                 this.ctx.shadowColor = props.shadow.color ? props.shadow.color : 'rgba(0, 0, 0, 0.6)';
                 this.ctx.shadowOffsetX = 0;
                 this.ctx.shadowOffsetY = 0;
@@ -271,7 +274,10 @@
     
     $.fn.circleAudioPlayer = function(){
         $(this).each(function(){
-            var player = new CircleAudioPlayer($(this)[0]);
+            var radius = $(this).data('radius') ? $(this).data('radius') : 100;
+            var skin = $(this).data('skin') ? $(this).data('skin') : 'default';
+            
+            var player = new CircleAudioPlayer($(this)[0], {radius: radius, skin: skin});
             $(this).data("circle-audio-player", player);
         })
     }
