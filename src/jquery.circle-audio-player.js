@@ -28,8 +28,9 @@
     };
 
     var CircleAudioPlayer = function (element, options) {
+        this.id = this._guid();
         this.element = $(element);
-        this.options = $.extend(defaults, options);
+        this.options = $.extend({}, defaults, options);
         this.radius = 100;
         this.scale = 1;
         this.diameter = this.radius * 2;
@@ -51,6 +52,18 @@
                     progressBar: {loadColor: "rgba(255, 255, 255, 0.7)", fillColor: "gradient:linear:rgba(255, 110, 2, 1.000):rgba(255, 255, 0, 1.000):rgba(255, 109, 0, 1.000)", margin: 20, shadow:{type: 'inner'}},
                     innerCircle: {color: "gradient:linear:#ececec:#d4d4d4", margin: 35, shadow:{type: 'outer'}},
                     buttons: {playColor: '#666666', playHoverColor: '#00ff00', pauseColor: '#666666', pauseHoverColor: '#ff0000'}
+                },
+                plane: {
+                    outerCircle: {color: "rgba(0,0,0,0)"},
+                    progressBar: {loadColor: "rgba(178,230,23,1)", fillColor: "#0095DA"},
+                    innerCircle: {color: "#F5F5F5", margin: 15},
+                    buttons: {playColor: '#666666', playHoverColor: '#0095DA', pauseColor: '#666666', pauseHoverColor: '#0095DA'}
+                },
+                black: {
+                    outerCircle: {color: "gradient:linear:#585858:#A6A6A6"},
+                    progressBar: {loadColor: "rgba(255, 255, 255, 0.7)", fillColor: "#0095DA", margin: 20, shadow:{type: 'inner'}},
+                    innerCircle: {color: "gradient:linear:#A6A6A6:#585858", margin: 35, shadow:{type: 'outer'}},
+                    buttons: {playColor: '#666666', playHoverColor: '#0095DA', pauseColor: '#666666', pauseHoverColor: '#0095DA'}
                 }
             }
         },
@@ -64,7 +77,17 @@
         getSkin: function(){
             return this.config.skins[this.options.skin];
         },
-
+        
+        _guid: function() {
+            function s4() {
+              return Math.floor((1 + Math.random()) * 0x10000)
+                .toString(16)
+                .substring(1);
+            }
+            return s4() + s4() + '-' + s4() + '-' + s4() + '-' +
+              s4() + '-' + s4() + s4() + s4();
+        },
+        
         _create: function(){
             this.canvas = $('<canvas></canvas>').attr('width', this.diameter+"px")
                                         .attr('height', this.diameter+"px")
@@ -92,6 +115,7 @@
             //listen events of player
             this.element.on("progress", this._onProgress);
             this.element.on("timeupdate", this._onTimeUpdate);
+            this.element.on("canplay", this._onProgress);
             
             //events on canvas
             var self = this;
@@ -107,6 +131,7 @@
         },
         
         _onProgress: function(evt){
+            console.info("on progress");
             var player = $(this).data("circle-audio-player");
             var d = this.duration;
             try{
@@ -117,8 +142,6 @@
             }catch(e){
                 ;
             }
-        
-            
         },
         
         _onTimeUpdate: function(evt){
@@ -274,6 +297,7 @@
     
     $.fn.circleAudioPlayer = function(){
         $(this).each(function(){
+            
             var radius = $(this).data('radius') ? $(this).data('radius') : 100;
             var skin = $(this).data('skin') ? $(this).data('skin') : 'default';
             
