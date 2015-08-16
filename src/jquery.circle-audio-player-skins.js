@@ -1,5 +1,6 @@
 //http://victorblog.com/html5-canvas-gradient-creator/ - help to generate gradiants
 
+
 var CircleAudioPlayerSkins = CircleAudioPlayerSkins || {} ;
 
 CircleAudioPlayerSkins.prototype = $.extend(CircleAudioPlayerSkins, {
