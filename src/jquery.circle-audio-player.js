@@ -19,7 +19,15 @@
  * limitations under the License.
  * ========================================================= */
 
-
+var CircleAudioPlayerSkins = {
+    default: {
+        outerCircle: {color: "gradient:linear:#f5f5f5:#e8e8e8"},
+        progressBar: {loadColor: "rgba(255, 255, 255, 0.7)", fillColor: "gradient:linear:rgba(255, 110, 2, 1.000):rgba(255, 255, 0, 1.000):rgba(255, 109, 0, 1.000)", margin: 20, shadow:{type: 'inner'}},
+        innerCircle: {color: "gradient:linear:#ececec:#d4d4d4", margin: 35, shadow:{type: 'outer'}},
+        buttons: {playColor: '#666666', playHoverColor: '#00ff00', pauseColor: '#666666', pauseHoverColor: '#ff0000', soundLed:{color:'#666666', size: 1 } }
+    }
+};
+            
 (function ($) {
 
     var defaults = {
@@ -37,6 +45,10 @@
         this.loaded = 0.0;
         this.played = 0.0;
         this.is_mouseover = false;
+        this.is_mousedown = false;
+        this.is_dragged = false;
+        this.start_pt = null;
+        this.prev_pt = null;
         this.canvas = null;
         this.ctx = null;
         this.init();
@@ -46,26 +58,7 @@
         constructor: CircleAudioPlayer,
         
         config: {
-            skins: {
-                default: {
-                    outerCircle: {color: "gradient:linear:#f5f5f5:#e8e8e8"},
-                    progressBar: {loadColor: "rgba(255, 255, 255, 0.7)", fillColor: "gradient:linear:rgba(255, 110, 2, 1.000):rgba(255, 255, 0, 1.000):rgba(255, 109, 0, 1.000)", margin: 20, shadow:{type: 'inner'}},
-                    innerCircle: {color: "gradient:linear:#ececec:#d4d4d4", margin: 35, shadow:{type: 'outer'}},
-                    buttons: {playColor: '#666666', playHoverColor: '#00ff00', pauseColor: '#666666', pauseHoverColor: '#ff0000'}
-                },
-                plane: {
-                    outerCircle: {color: "rgba(0,0,0,0)"},
-                    progressBar: {loadColor: "rgba(178,230,23,1)", fillColor: "#0095DA"},
-                    innerCircle: {color: "#F5F5F5", margin: 15},
-                    buttons: {playColor: '#666666', playHoverColor: '#0095DA', pauseColor: '#666666', pauseHoverColor: '#0095DA'}
-                },
-                black: {
-                    outerCircle: {color: "gradient:linear:#585858:#A6A6A6"},
-                    progressBar: {loadColor: "rgba(255, 255, 255, 0.7)", fillColor: "#0095DA", margin: 20, shadow:{type: 'inner'}},
-                    innerCircle: {color: "gradient:linear:#A6A6A6:#585858", margin: 35, shadow:{type: 'outer'}},
-                    buttons: {playColor: '#666666', playHoverColor: '#0095DA', pauseColor: '#666666', pauseHoverColor: '#0095DA'}
-                }
-            }
+            skins: CircleAudioPlayerSkins
         },
         
         init: function () {
@@ -94,7 +87,10 @@
                                         .css({
                                                 width: this.diameter+"px", 
                                                 height: this.diameter+"px",
-                                                cursor: 'pointer'
+                                                cursor: 'pointer',
+                                                'user-select': 'none',
+                                                '-webkit-user-select': 'none',
+                                                '-moz-user-select': 'none',
                                             });
             this.ctx = this.canvas[0].getContext("2d");
             
@@ -127,11 +123,16 @@
                 self.render();
               });
               
-            this.canvas.on("click", function(event){self._onClick(event);});
+            ///this.canvas.on("click touch", function(event){self._onClick(event);}); /// using mouse up instead click
+            this.canvas.on("mousedown touchstart MSPointerDown", function(event){
+                self.is_mousedown = true; 
+                self.prev_pt = self.start_pt = self._getMousePos(event)
+            });
+            this.canvas.on("mousemove touchmove MSPointerMove", function(event){self._onMove(event);});
+            this.canvas.on("mouseup touchend MSPointerUp", function(event){self._onClick(event);});
         },
         
         _onProgress: function(evt){
-            console.info("on progress");
             var player = $(this).data("circle-audio-player");
             var d = this.duration;
             try{
@@ -155,13 +156,65 @@
             //console.info( t, " : ", d );
         },
         
-        _onClick: function(evt){
-            var media = this.element[0];
-            if(media.paused){
-                media.play();
-            }else{
-                media.pause();
+        _onMove: function(event){
+            var skin = this.getSkin();
+            var m1 = skin.innerCircle.margin ? skin.innerCircle.margin : 0;
+            if(this.is_mousedown){
+                this.is_dragged = true;
+                
+                var media = this.element[0];
+                
+                var pt = this._getMousePos(event);
+                var sat = this._getMouseAngle(this.prev_pt);
+                var eat = this._getMouseAngle(pt);
+                try{
+                    if(sat > eat){
+                        //anticlock wise
+                        media.volume = media.volume >= .01 ? media.volume -= .01 : 0;
+                    }else{
+                        media.volume = media.volume <= .99 ? media.volume += .01 : 1;
+                    }
+                }catch(e){
+                    ;
+                }
+                
+                this.prev_pt = pt;
+                this.render();
+                //console.info("mouse moved", sat, eat);
             }
+        },
+        
+        _onClick: function(event){
+            //console.info("on click", this.is_dragged);
+            var pt = this._getMousePos(event);
+            var skin = this.getSkin();
+            var m1 = skin.innerCircle.margin ? skin.innerCircle.margin : 0;
+            var m2 = skin.progressBar.margin ? skin.progressBar.margin : 0;
+            if(this._inRadius(this.radius, this.radius, pt.x, pt.y, this.radius - m1)){
+                if(!this.is_dragged){
+                    // if in inner circle
+                    var media = this.element[0];
+                    if(media.paused){
+                        media.play();
+                    }else{
+                        media.pause();
+                    }
+                }
+            }else if(this._inRadius(this.radius, this.radius, pt.x, pt.y, this.radius - m2)){
+                var media = this.element[0];
+                var angle = Math.atan2(pt.y - this.radius, pt.x -this.radius);
+                if(angle < 0) angle = 6 + angle;
+                
+                this.played = angle / 6;
+                var d = media.duration;
+                media.currentTime = d * this.played;
+                
+            }
+            /*var radius = this.radius;
+            if(props.margin) radius = radius - props.margin; */
+            
+            this.is_mousedown = false; 
+            this.is_dragged = false;
             this.render();
             //console.info( t, " : ", d );
         },
@@ -177,7 +230,7 @@
             this._drawCircle(skin.outerCircle);
             this._drawProgressBar(skin.progressBar);
             this._drawCircle(skin.innerCircle);
-            this._drawButton(skin.buttons);
+            this._drawButton();
             
         },
         
@@ -187,7 +240,7 @@
                 //gradieant
                 var info_arr = color.split(":");
                 if(info_arr[1] == "radial"){
-                    var grd=this.ctx.createRadialGradient(center,center,0,radius,radius,radius);
+                    var grd=this.ctx.createRadialGradient(center,center,0,center,center,center);
                 }else{
                     var grd = this.ctx.createLinearGradient(0, 0, diameter, diameter);
                 }
@@ -271,7 +324,9 @@
             this._drawCircle(props);
         },
         
-        _drawButton: function(props){
+        _drawButton: function(){
+            var skin = this.getSkin();
+            var props = skin.buttons;
             this.ctx.save();
             var radius = this.radius;
             
@@ -282,13 +337,59 @@
             var dw = is_play ? 0:5;
             
             this.ctx.save();
+            
             this.ctx.font = "normal bold 50px arial";
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline="middle";
-            this.ctx.fillStyle = this._parseColor(!is_play ? (this.is_mouseover ? props.playHoverColor : props.playColor) : (this.is_mouseover ? props.pauseHoverColor : props.pauseColor));
+            this.ctx.fillStyle = this._parseColor(!is_play ? (this.is_mouseover ? props.playHoverColor : props.playColor) : (this.is_mouseover ? props.pauseHoverColor : props.pauseColor), radius, radius);
             this.ctx.fillText(text, radius + dw, radius);
+            
+            // draw sound led
+            text = '\u00B7';
+            var innerCircle = skin.innerCircle;
+            var m1 = skin.innerCircle.margin ? skin.innerCircle.margin : 0;
+            radius = radius - m1 - (5 / this.scale);
+            var size = (props.soundLed.size ? (props.soundLed.size > 3 ? 3: props.soundLed.size ) : 1)/this.scale;
+            
+            
+            this.ctx.font = "normal bold "+(20 * size )+"px sans serif";
+            this.ctx.textAlign = 'center';
+            this.ctx.textBaseline="middle";
+            
+            var ang = media.volume * 180;
+            //console.info("current volume", media.volume, ang);
+            
+            var x = this.radius + Math.cos(ang * Math.PI / 180) * radius;
+            var y = this.radius + Math.sin(ang * Math.PI / 180) * radius;
+            this.ctx.fillStyle = this._parseColor(props.soundLed.color, radius, radius);
+            this.ctx.fillText(text, x, y);
+
             this.ctx.restore();
             
+        },
+        
+        /**
+         * detect if given point x2,y2 is with in cicrcle of radius "r" and centered at x1,y1
+         */
+        _inRadius: function(x1, y1, x2, y2, r){  
+            return ( Math.sqrt((x2-x1)*(x2-x1) + (y2-y1)*(y2-y1)) < r ); 
+        },
+        
+        _getMousePos: function(event){
+            if(event.touches && event.touches.length > 1){
+                var cx = event.touches[0].offsetX, cy = event.touches[0].offsetY;
+            }else{
+                var cx = event.offsetX, cy = event.offsetY;
+            }
+            cx = cx / this.scale;
+            cy = cy / this.scale;
+            return {x: cx, y: cy};
+        },
+        
+        _getMouseAngle: function(pt){
+            var angle = Math.atan2(pt.y - this.radius, pt.x -this.radius) * 180 / Math.PI;
+            if(angle < 0) angle = 360 + angle;
+            return angle;
         }
         
         
