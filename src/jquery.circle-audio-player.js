@@ -20,7 +20,7 @@
  * ========================================================= */
 
 var CircleAudioPlayerSkins = {
-    defaultSkin: {
+    'default': {
         outerCircle: {color: "gradient:linear:#f5f5f5:#e8e8e8"},
         progressBar: {loadColor: "rgba(255, 255, 255, 0.7)", fillColor: "gradient:linear:rgba(255, 110, 2, 1.000):rgba(255, 255, 0, 1.000):rgba(255, 109, 0, 1.000)", margin: 20, shadow:{type: 'inner'}},
         innerCircle: {color: "gradient:linear:#ececec:#d4d4d4", margin: 35, shadow:{type: 'outer'}},
@@ -32,7 +32,7 @@ var CircleAudioPlayerSkins = {
 
     var defaults = {
         radius: 100,
-        skin: 'defaultSkin'
+        skin: 'default'
     };
 
     var CircleAudioPlayer = function (element, options) {
