@@ -1,4 +1,5 @@
 //http://victorblog.com/html5-canvas-gradient-creator/ - help to generate gradiants
+//
 
 
 var CircleAudioPlayerSkins = CircleAudioPlayerSkins || {} ;
@@ -21,5 +22,11 @@ CircleAudioPlayerSkins.prototype = $.extend(CircleAudioPlayerSkins, {
         progressBar: {loadColor: "rgba(255, 255, 255, 0.4)", fillColor: "gradient:radial:rgba(0, 128, 0, 1.000):rgba(0, 84, 0, 1.000)", margin: 20, shadow:{type: 'inner'}},
         innerCircle: {color: "gradient:radial:#008000:#005400", margin: 35, shadow:{type: 'outer'}},
         buttons: {playColor: '#005400', playHoverColor: '#44ce44', pauseColor: '#005400', pauseHoverColor: '#44ce44', soundLed:{color:'#00ff00', size: 1 } }
+    },
+    glossy: {
+        outerCircle: {color: "rgba(0,0,0,0)"},
+        progressBar: {loadColor: "rgba(255, 255, 255, 0.4)",fillColor: '#000000'},
+        innerCircle: {color: {type: 'linear', distribute:[0,0.5,0.52,1], positions:[100,0,100,200] , colors:['#e2e2e2','#dbdbdb','#d1d1d1','#fefefe']}, margin: 35, shadow:{type: 'outer'}},
+        buttons: {playColor: 'gradient:linear-v:distribute-0,0.5,0.52,1:#aebcbf:#6e7774:#0a0e0a:#0a0809', playHoverColor: 'gradient:linear-v:distribute-0,0.5,0.52,1:#F85032:#f16f5c:#f6290c:#e73827', pauseColor: 'gradient:linear-v:distribute-0,0.5,0.52,1:#aebcbf:#6e7774:#0a0e0a:#0a0809', pauseHoverColor: 'gradient:linear-v:distribute-0,0.5,0.52,1:#F85032:#f16f5c:#f6290c:#e73827', soundLed:{color:'#ff0000', size: 1 } }
     }
 });

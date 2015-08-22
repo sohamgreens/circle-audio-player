@@ -234,13 +234,47 @@ var CircleAudioPlayerSkins = {
             
         },
         
-        _parseColor: function(color, center, radius){
+        _parseColor: function(color){
+            var center = this.radius, radius = this.radius;
+            //console.info(radius);
             var diameter = 2 * radius;
-            if(color.match(/^gradient/)){
+            if(typeof color == 'object'){
+                if(color.type == 'radial'){
+                    if(color.positions){
+                        var grd=this.ctx.createRadialGradient.apply(this.ctx, color.positions);
+                    }else{
+                        var grd=this.ctx.createRadialGradient(center,center,0,center,center,center);
+                    }
+                }else{
+                    if(color.positions){
+                        var grd=this.ctx.createLinearGradient.apply(this.ctx, color.positions);
+                    }else{
+                        var grd = this.ctx.createLinearGradient(0, 0, diameter, diameter);
+                    }
+                }   
+                
+                if(color.distribute){
+                    for(var k=0; k<color.distribute.length; k++){
+                        grd.addColorStop(color.distribute[k], color.colors[k]);
+                    }
+                }else{
+                    var d = 1 / (color.colors.length - 1), j=0; 
+                    for(var k=0; k<color.colors.length; k++){
+                        grd.addColorStop(j, color.colors[k]);
+                        j += d;
+                    }
+                }
+                return grd;
+                
+            }else if(color.match(/^gradient/)){
                 //gradieant
                 var info_arr = color.split(":");
                 if(info_arr[1] == "radial"){
                     var grd=this.ctx.createRadialGradient(center,center,0,center,center,center);
+                }else if(info_arr[1] == "linear-v"){
+                    var grd=this.ctx.createLinearGradient(radius, 0, radius, diameter);
+                }else if(info_arr[1] == "linear-h"){
+                    var grd=this.ctx.createLinearGradient(0, radius, diameter, radius);
                 }else{
                     var grd = this.ctx.createLinearGradient(0, 0, diameter, diameter);
                 }
@@ -271,6 +305,7 @@ var CircleAudioPlayerSkins = {
             var radius = this.radius;
             var center = this.radius;
             if(props.margin) radius = radius - props.margin;
+            if(props.stroke) radius = radius - props.stroke.width;
     
             if(props.color){
                 var angle = props.angle ? props.angle * Math.PI * 2 : 2 * Math.PI;
@@ -287,6 +322,13 @@ var CircleAudioPlayerSkins = {
                     this.ctx.shadowColor = props.shadow.color ? props.shadow.color : 'rgba(0, 0, 0, 0.6)';
                     this.ctx.shadowOffsetX = 0;
                     this.ctx.shadowOffsetY = 0;
+                }
+                
+                if(props.stroke){
+                    console.log(props.stroke);
+                    this.ctx.lineWidth = props.stroke.width;
+                    this.ctx.strokeStyle = this._parseColor(props.stroke.color);
+                    this.ctx.stroke();
                 }
                 
                 this.ctx.fill();
@@ -319,7 +361,7 @@ var CircleAudioPlayerSkins = {
                 this._drawCircle({color: props.loadColor, angle: this.loaded, margin: props.margin  });
             }
             if(this.played > 0){
-                this._drawCircle({color: props.fillColor, angle: this.played, margin: props.margin  });
+                this._drawCircle({color: props.fillColor, stroke: props.stroke?props.stroke:null , angle: this.played, margin: props.margin  });
             }
             this._drawCircle(props);
         },
